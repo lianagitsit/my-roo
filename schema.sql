@@ -5,14 +5,14 @@ CREATE DATABASE bonnaroo_db;
 USE bonnaroo_db;
 
 CREATE TABLE bands (
-    band_id INTEGER AUTO_INCREMENT NOT NULL,
+    id INTEGER AUTO_INCREMENT NOT NULL,
     band_name VARCHAR(30) NOT NULL,
     genre VARCHAR(30),
     stage VARCHAR(30) NOT NULL,
     on_day VARCHAR(10) NOT NULL,
     start_time TIME,
     end_time TIME,
-    PRIMARY KEY(band_id)
+    PRIMARY KEY(id)
 );
 
 INSERT INTO bands(band_name, genre, stage, on_day, start_time, end_time)
@@ -38,11 +38,20 @@ SELECT
 FROM bands;
 
 CREATE TABLE fans (
-    fan_id INTEGER NOT NULL AUTO_INCREMENT,
+    id INTEGER NOT NULL AUTO_INCREMENT,
     username VARCHAR(30) NOT NULL,
     user_pass VARCHAR(30) NOT NULL,
-    PRIMARY KEY(fan_id)
+    PRIMARY KEY(id)
 );
 
 INSERT INTO fans (username, user_pass)
 VALUES ("admin", "password");
+
+CREATE TABLE fan_ratings (
+    id INTEGER NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY(id),
+    fan_id INTEGER,
+    band_name VARCHAR(30),
+    rating INTEGER,
+    on_schedule BOOLEAN DEFAULT false
+);
