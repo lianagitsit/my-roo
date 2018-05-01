@@ -14,7 +14,6 @@ var connection = sql.createConnection({
 var currentUserID;
 
 connection.connect(err => {
-    //  if (err) throw err;
     userLoginOrRegister();
 })
 
@@ -87,8 +86,10 @@ function start() {
                 searchByStage();
                 break;
             case "Search for a Band":
+                searchByBand();
                 break;
             case "See Bands I've Rated":
+                viewMyBands();
                 break;
             case "Logout":
                 connection.end();
@@ -123,11 +124,11 @@ function searchByDay() {
     })
 }
 
-function searchByGenre(){
+function searchByGenre() {
     connection.query("SELECT DISTINCT genre FROM bands", (err, res) => {
         const genres = [];
         // console.log(res);
-        for (let i = 0; i < res.length; i++){
+        for (let i = 0; i < res.length; i++) {
             genres.push(res[i].genre);
         }
 
@@ -140,17 +141,17 @@ function searchByGenre(){
             connection.query("SELECT band_name, genre, stage, on_day, TIME_FORMAT(start_time, '%h:%i %p') start_time, TIME_FORMAT(end_time, '%h:%i %p') end_time FROM bands WHERE genre=?", [genreResponse.genre], (err, resGenre) => {
 
                 var bandsArray = [];
-    
+
                 var table = new Table({
                     head: ['Band', 'Genre', 'Stage', 'Day', 'Start', 'End'],
                     colWidths: [40, 15, 15, 15, 10, 10]
                 });
-    
+
                 for (let i = 0; i < resGenre.length; i++) {
                     table.push([resGenre[i].band_name, resGenre[i].genre, resGenre[i].stage, resGenre[i].on_day, resGenre[i].start_time, resGenre[i].end_time]);
                     bandsArray.push(resGenre[i].band_name);
                 };
-    
+
                 console.log(table.toString());
                 checkoutBand(bandsArray);
             })
@@ -158,10 +159,10 @@ function searchByGenre(){
     })
 }
 
-function searchByStage(){
+function searchByStage() {
     connection.query("SELECT DISTINCT stage FROM bands", (err, res) => {
         const stages = [];
-        for (let i = 0; i < res.length; i++){
+        for (let i = 0; i < res.length; i++) {
             stages.push(res[i].stage);
         }
 
@@ -174,21 +175,69 @@ function searchByStage(){
             connection.query("SELECT band_name, genre, stage, on_day, TIME_FORMAT(start_time, '%h:%i %p') start_time, TIME_FORMAT(end_time, '%h:%i %p') end_time FROM bands WHERE stage=?", [stageResponse.stage], (err, resStage) => {
 
                 var bandsArray = [];
-    
+
                 var table = new Table({
                     head: ['Band', 'Genre', 'Stage', 'Day', 'Start', 'End'],
                     colWidths: [40, 15, 15, 15, 10, 10]
                 });
-    
+
                 for (let i = 0; i < resStage.length; i++) {
                     table.push([resStage[i].band_name, resStage[i].genre, resStage[i].stage, resStage[i].on_day, resStage[i].start_time, resStage[i].end_time]);
                     bandsArray.push(resStage[i].band_name);
                 };
-    
+
                 console.log(table.toString());
                 checkoutBand(bandsArray);
             })
         })
+    })
+}
+
+function searchByBand() {
+    inquirer.prompt({
+        type: "input",
+        message: "Enter the band you're looking for:",
+        name: "bandName"
+    }).then(bandSearchRes => {
+        connection.query("SELECT band_name, genre, stage, on_day, TIME_FORMAT(start_time, '%h:%i %p') start_time, TIME_FORMAT(end_time, '%h:%i %p') end_time FROM bands WHERE band_name=?", [bandSearchRes.bandName], (err, resBand) => {
+            if (resBand.length === 0){
+                console.log("That band doesn't seem to be playing this year!");
+                return setTimeout(searchByBand, 1000);
+            }
+            var bandsArray = [];
+
+            var table = new Table({
+                head: ['Band', 'Genre', 'Stage', 'Day', 'Start', 'End'],
+                colWidths: [40, 15, 15, 15, 10, 10]
+            });
+
+            for (let i = 0; i < resBand.length; i++) {
+                table.push([resBand[i].band_name, resBand[i].genre, resBand[i].stage, resBand[i].on_day, resBand[i].start_time, resBand[i].end_time]);
+                bandsArray.push(resBand[i].band_name);
+            };
+
+            console.log(table.toString());
+            checkoutBand(bandsArray);
+        })
+    })
+}
+
+function viewMyBands(){
+    connection.query("SELECT band_name, rating, on_schedule FROM fan_ratings WHERE fan_id=? ORDER BY rating DESC", [currentUserID], (err, res) => {
+        var bandsArray = [];
+
+        var table = new Table({
+            head: ['Band', 'Rating', 'See?'],
+            colWidths: [40, 10, 10]
+        });
+
+        for (let i = 0; i < res.length; i++) {
+            table.push([res[i].band_name, res[i].rating, res[i].on_schedule]);
+            bandsArray.push(res[i].band_name);
+        };
+
+        console.log(table.toString());
+        start();
     })
 }
 
@@ -225,7 +274,6 @@ function checkoutBand(arr) {
 
                     connection.query("INSERT INTO fan_ratings(fan_id, band_name, rating, on_schedule) VALUES(?, ?, ?, ?); ", [currentUserID, band, newRating, onSchedule], (err, insertBandResponse) => {
                         console.log("Added " + band + " to your fan list!");
-                        // console.log(res);
 
                         // After making changes to the database, prompt to checkout another band
                         inquirer.prompt({
@@ -268,8 +316,6 @@ function checkoutBand(arr) {
 
                             connection.query("UPDATE fan_ratings SET rating=? WHERE fan_id=? AND band_name=?", [newRating, currentUserID, band], (err, updateRatingRes) => {
                                 console.log("Your rating for " + band + " has been updated to a " + newRating);
-
-                                console.log("recorded: " + recordedRating, "new: " + newRating);
 
                                 // If their rating has gone up and the band is not on their schedule, let them add it
                                 if (newRating > recordedRating && !isOnSchedule) {
