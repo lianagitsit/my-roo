@@ -80,6 +80,9 @@ function start() {
             case "See Bands by Day":
                 searchByDay();
                 break;
+            case "See Bands by Genre":
+                searchByGenre();
+                break;
             case "Logout":
                 connection.end();
                 break;
@@ -109,6 +112,41 @@ function searchByDay() {
 
             console.log(table.toString());
             checkoutBand(bandsArray);
+        })
+    })
+}
+
+function searchByGenre(){
+    connection.query("SELECT DISTINCT genre FROM bands", (err, res) => {
+        const genres = [];
+        // console.log(res);
+        for (let i = 0; i < res.length; i++){
+            genres.push(res[i].genre);
+        }
+
+        inquirer.prompt({
+            type: "list",
+            message: "Select a genre:",
+            name: "genre",
+            choices: genres
+        }).then(genreResponse => {
+            connection.query("SELECT band_name, genre, stage, on_day, TIME_FORMAT(start_time, '%h:%i %p') start_time, TIME_FORMAT(end_time, '%h:%i %p') end_time FROM bands WHERE genre=?", [genreResponse.genre], (err, resGenre) => {
+
+                var bandsArray = [];
+    
+                var table = new Table({
+                    head: ['Band', 'Genre', 'Stage', 'Day', 'Start', 'End'],
+                    colWidths: [40, 15, 15, 15, 10, 10]
+                });
+    
+                for (let i = 0; i < resGenre.length; i++) {
+                    table.push([resGenre[i].band_name, resGenre[i].genre, resGenre[i].stage, resGenre[i].on_day, resGenre[i].start_time, resGenre[i].end_time]);
+                    bandsArray.push(resGenre[i].band_name);
+                };
+    
+                console.log(table.toString());
+                checkoutBand(bandsArray);
+            })
         })
     })
 }
@@ -259,5 +297,4 @@ function checkoutBand(arr) {
             }
         })
     })
-
 }
