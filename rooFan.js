@@ -68,20 +68,27 @@ function start() {
         name: "action",
         message: "What would you like to do?",
         choices: [
-            "See Bands by Day",
-            "See Bands by Genre",
-            "See Bands I've Rated",
-            "Search by Stage",
+            "Browse by Day",
+            "Browse by Genre",
+            "Browse by Stage",
             "Search for a Band",
+            "See Bands I've Rated",
             "Logout"
         ]
     }).then(inquirerResponse => {
         switch (inquirerResponse.action) {
-            case "See Bands by Day":
+            case "Browse by Day":
                 searchByDay();
                 break;
-            case "See Bands by Genre":
+            case "Browse by Genre":
                 searchByGenre();
+                break;
+            case "Browse by Stage":
+                searchByStage();
+                break;
+            case "Search for a Band":
+                break;
+            case "See Bands I've Rated":
                 break;
             case "Logout":
                 connection.end();
@@ -142,6 +149,40 @@ function searchByGenre(){
                 for (let i = 0; i < resGenre.length; i++) {
                     table.push([resGenre[i].band_name, resGenre[i].genre, resGenre[i].stage, resGenre[i].on_day, resGenre[i].start_time, resGenre[i].end_time]);
                     bandsArray.push(resGenre[i].band_name);
+                };
+    
+                console.log(table.toString());
+                checkoutBand(bandsArray);
+            })
+        })
+    })
+}
+
+function searchByStage(){
+    connection.query("SELECT DISTINCT stage FROM bands", (err, res) => {
+        const stages = [];
+        for (let i = 0; i < res.length; i++){
+            stages.push(res[i].stage);
+        }
+
+        inquirer.prompt({
+            type: "list",
+            message: "Select a stage:",
+            name: "stage",
+            choices: stages
+        }).then(stageResponse => {
+            connection.query("SELECT band_name, genre, stage, on_day, TIME_FORMAT(start_time, '%h:%i %p') start_time, TIME_FORMAT(end_time, '%h:%i %p') end_time FROM bands WHERE stage=?", [stageResponse.stage], (err, resStage) => {
+
+                var bandsArray = [];
+    
+                var table = new Table({
+                    head: ['Band', 'Genre', 'Stage', 'Day', 'Start', 'End'],
+                    colWidths: [40, 15, 15, 15, 10, 10]
+                });
+    
+                for (let i = 0; i < resStage.length; i++) {
+                    table.push([resStage[i].band_name, resStage[i].genre, resStage[i].stage, resStage[i].on_day, resStage[i].start_time, resStage[i].end_time]);
+                    bandsArray.push(resStage[i].band_name);
                 };
     
                 console.log(table.toString());
