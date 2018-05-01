@@ -1,3 +1,10 @@
+/* 
+    TODOs: 
+    * Refactor to DRY this out, yowza
+    * Manager view to add bands from CLI
+    * Feature to check whether shows conflict with user's schedule
+*/
+
 require("dotenv").config();
 var sql = require("mysql");
 var inquirer = require("inquirer");
@@ -27,6 +34,7 @@ function userLoginOrRegister() {
         if (inquirerResponse.confirm) {
             login();
         }
+        // TODO: Add user registration
     })
 }
 
@@ -91,6 +99,7 @@ function start() {
             case "See Bands I've Rated":
                 viewMyBands();
                 break;
+            // TODO: View My Schedule option
             case "Logout":
                 connection.end();
                 break;
@@ -127,7 +136,7 @@ function searchByDay() {
 function searchByGenre() {
     connection.query("SELECT DISTINCT genre FROM bands", (err, res) => {
         const genres = [];
-        // console.log(res);
+
         for (let i = 0; i < res.length; i++) {
             genres.push(res[i].genre);
         }
